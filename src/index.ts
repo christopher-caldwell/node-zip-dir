@@ -5,22 +5,30 @@ import Zip from 'jszip'
 
 type Folders = Record<string, Zip>
 
+export type ZipFilter = (path: string, stat: Stats) => boolean
+export type ZipEach = (path: string) => void
 export interface Options {
   saveTo?: string
-  each?: (path: string) => void
-  filter?: (path: string, stat: Stats) => boolean
+  each?: ZipEach
+  filter?: ZipFilter
   maxOpenFiles?: number
 }
 export type FileQueue = QueueObject<Task>
 
 export const zipWrite = async (rootDir: string, options: Options = { maxOpenFiles: 500 }) => {
-  const buffer = await zipBuffer(rootDir, options)
-  if (options.saveTo) writeFileSync(options.saveTo, buffer, { encoding: 'binary' })
+  try {
+    const buffer = await zipBuffer(rootDir, options)
+    if (options.saveTo) writeFileSync(options.saveTo, buffer, { encoding: 'binary' })
+    return buffer
+  } catch (e) {
+    console.error('[zipWrite]: error', e)
+    throw e
+  }
 }
 
 const zip = new Zip()
 
-const zipBuffer = async (rootDir: string, options: Options) => {
+export const zipBuffer = async (rootDir: string, options: Options) => {
   const folders: Folders = {}
   const fileQueue = generateFileQueue(folders, options)
   // Resolve the path so we can remove trailing slash if provided
