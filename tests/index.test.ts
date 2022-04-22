@@ -7,7 +7,7 @@ import { zipWrite } from '@/index'
 import {
   compareFiles,
   zipAndUnzip,
-  // cleanUp,
+  cleanUp,
   addEmpty,
   jsonOnly,
   noDirs,
@@ -15,6 +15,12 @@ import {
   zipPath,
   outputPath
 } from './utils'
+
+beforeEach(async () => {
+  addEmpty()
+  await zipAndUnzip({ saveTo: zipPath })
+})
+afterEach(cleanUp)
 
 describe('Creates a zip buffer', () => {
   test('Returns a usable zip buffer', () => {
@@ -43,34 +49,14 @@ describe('Creates a zip buffer', () => {
   test('Throws an error when dirPath is a file', async () => {
     await expect(zipWrite(path.join(sourcePath, 'file1.json'))).rejects.toThrowError()
   })
-
-  // test('', async () => {
-  //   expect(await ).toThrowError()
-  // })
 })
 
 describe('Writes a zip file', () => {
-  beforeEach(async () => {
-    addEmpty()
-    await zipAndUnzip({ saveTo: zipPath })
-  })
   test('Compresses and unpacks and all files match', () => {
     const files = ['file1.json', 'tiny.gif', 'dir/file2.json', 'dir/file3.json', 'dir/deep-dir/deeper-dir/file4.json']
     expect.assertions(files.length)
     files.forEach(compareFiles)
   })
-
-  /*
-    // No longer works in v2.0.0, cannot determine the change in
-    // in JSZip that caused this.
-    it("retains empty directories", function (done) {
-      fs.stat(emptyDirOutputPath, function (err, stat) {
-        expect(err).to.not.be.ok;
-        expect(stat.isDirectory()).to.be.ok;
-        done();
-      });
-    });
-    */
 })
 
 describe('If a root path is specified', () => {

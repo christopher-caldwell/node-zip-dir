@@ -1,68 +1,165 @@
 # zip-dir
 
-Zips up a directory and saves the zip to disk or returns as a buffer.
+Zips up a directory and saves the zip to disk or returns as a buffer. Forked from [node-zip-dir](https://github.com/jsantell/node-zip-dir). This version is async, and natively TypeScript.
 
-[![Build Status](http://img.shields.io/travis/jsantell/node-zip-dir.svg?style=flat-square)](https://travis-ci.org/jsantell/node-zip-dir)
-[![Build Status](http://img.shields.io/npm/v/zip-dir.svg?style=flat-square)](https://www.npmjs.org/package/zip-dir)
+<p align="center">
+  <h4/>
+  <a href='https://www.npmjs.com/package/@caldwell619/zip-dir'>
+    <img src="https://img.shields.io/npm/v/@caldwell619/zip-dir">
+  </a>
+  <a href='https://bundlephobia.com/result?p=@caldwell619/zip-dir'>
+    <img src="https://img.shields.io/bundlephobia/min/@caldwell619/zip-dir">
+  </a>
+  <img src="https://codecov.io/gh/christopher-caldwell/node-zip-dir/branch/master/graph/badge.svg?token=2LA7ETDPO3">
+  <img src="https://img.shields.io/github/last-commit/christopher-caldwell/node-zip-dir">
+  <img src="https://img.shields.io/npm/types/@caldwell619/zip-dir">
+</p>
 
-## install
+## Installation
 
-```
-$ npm install zip-dir
-```
+```bash
+# Yarn
+yarn add @caldwell619/zip-dir
 
-## example
-
-```javascript
-var zipdir = require('zip-dir');
-
-// `buffer` is the buffer of the zipped file
-var buffer = await zipdir('/path/to/be/zipped');
-
-zipdir('/path/to/be/zipped', function (err, buffer) {
-  // `buffer` is the buffer of the zipped file
-});
-
-zipdir('/path/to/be/zipped', { saveTo: '~/myzip.zip' }, function (err, buffer) {
-  // `buffer` is the buffer of the zipped file
-  // And the buffer was saved to `~/myzip.zip`
-});
-
-// Use a filter option to prevent zipping other zip files!
-// Keep in mind you have to allow a directory to descend into!
-zipdir('/path/to/be/zipped', { filter: (path, stat) => !/\.zip$/.test(path) }, function (err, buffer) {
-  
-});
-
-// Use an `each` option to call a function everytime a file is added, and receives the path
-zipdir('/path/to/be/zipped', { each: path => console.log(p, "added!"), function (err, buffer) {
-
-});
-  
+# NPM
+npm install --save @caldwell619/zip-dir
 ```
 
-## methods
+## Basic Example
 
+The library is async, and will return a Buffer that you can do whatever you'd like with.
+
+```ts
+import { zipWrite } from '@caldwell619/zip-dir'
+
+const buffer = await zipWrite('../')
 ```
-var zipdir = require('zip-dir');
+
+## Options
+
+Every option is optional, as well as the entire options object. You do not need to provide these options.
+
+<table>
+  <thead>
+    <tr>
+      <td>
+        Name
+      </td>
+      <td>
+        Type
+      </td>
+      <td>
+        Description
+      </td>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <code>saveTo</code>
+      </td>
+      <td>
+        <code>string</code>
+      </td>
+      <td>
+        If present, will write the zip to the disc at the specified location. This is nice if all you want to do is write the file
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>each</code>
+      </td>
+      <td>
+        <code>(path: string) => void</code>
+      </td>
+      <td>
+        Callback that can be executed on each path that is explored. This will fire for files, and directories, even if they are empty.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>filter</code>
+      </td>
+      <td>
+        <code>(path: string, stat: Stats) => boolean</code>
+      </td>
+      <td>
+        Filter out directories or files that you don't want to be in the zip. This is useful for <code>node modules/</code>, <code>.git/</code>, etc.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>maxOpenFiles</code>
+      </td>
+      <td>
+        <code>number</code>
+      </td>
+      <td>
+        More of an internal mechanism, but exposed in case you want to push it. This is the limit of files the tool will try to process at once. Depending on your machine, this can be increased or decreased.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+## In-depth Examples
+
+### Saving to Disc
+
+Zips the parent directory, and writes to `/tmp`
+
+```ts
+import { zipWrite } from '@caldwell619/zip-dir'
+
+zipWrite('..', {
+  saveTo: '/tmp/result.zip'
+})
 ```
 
-### zipdir(dirPath, [options], [callback]) : [Promise]
+### Saving to Disc using `path`
 
-Zips up `dirPath` recursively preserving directory structure and returns
-the compressed buffer on success. If the `callback` function is supplied, it will be called with `(error, buffer)` once the `zipdir` function is done. If not, the buffer or an error can be obtained from the returned promise. The `callback` and the promise are mutually exclusive. If `options` defined with a `saveTo` path, then the callback and promise will be delayed until the buffer has also
-been saved to disk.
+Zips the entire parent directory, excluding `node_modules/`, `.git` and any `.zip` files. This will write to the current directory with a file name of `result.zip`.
 
-#### Options
+```ts
+import { zipWrite } from '@caldwell619/zip-dir'
+import { resolve, join } from 'path'
 
-* `saveTo` A path to save the buffer to.
-* `filter` A function that is called for all items to determine whether or not they should be added to the zip buffer. Function is called with the `fullPath` and a `stats` object ([fs.Stats](http://nodejs.org/api/fs.html#fs_class_fs_stats)). Return true to add the item; false otherwise. To include files within directories, directories must also pass this filter.
-* `each` A function that is called everytime a file or directory is added to the zip.
+const zipPath = join(process.cwd(), '..')
+const zipOutputPath = resolve(process.cwd(), 'result.zip')
 
-## TODO
+zipWrite(zipPath, {
+  saveTo: zipOutputPath
+})
+```
 
-* Add an option to not add empty directories if there are no valid children inside
+### Saving to Disc with Filter
 
-## license
+Zips the entire parent directory, excluding `node_modules/`, `.git` and any `.zip` files. This will write to the current directory with a file name of `result.zip`.
 
-MIT
+```ts
+import { zipWrite } from '@caldwell619/zip-dir'
+import { resolve, join } from 'path'
+
+const zipPath = join(process.cwd(), '..')
+const zipOutputPath = resolve(process.cwd(), 'result.zip')
+
+zipWrite(zipPath, {
+  filter: path => {
+    const isNodeModules = /node_modules$/.test(path)
+    const isGit = /\.git$/.test(path)
+    const isZip = /\.zip$/.test(path)
+    return !isNodeModules && !isGit && !isZip
+  },
+  saveTo: zipOutputPath
+})
+```
+
+### Getting the Buffer
+
+```ts
+import { zipWrite } from '@caldwell619/zip-dir'
+
+const getBuffer = async () => {
+  const buffer = await zipWrite('../')
+  // Whatever else you wanna do with a Buffer
+}
+```
