@@ -7,9 +7,9 @@ import bufferEqual from 'buffer-equal'
 import type { Options, ZipFilter } from '../src'
 import { zipWrite } from '../src'
 
-export const sampleZipPath = join(__dirname, 'fixtures/sampleZip')
-export const xpiPath = join(__dirname, 'my.xpi')
-export const outputPath = join(__dirname, 'myxpi/')
+export const sampleZipPath = join(__dirname, 'assets')
+export const xpiPath = join(__dirname, 'test.zip')
+export const outputPath = join(__dirname, 'myxpi')
 export const emptyDirPath = join(sampleZipPath, 'emptyDir')
 
 export const cleanUp = () => {
@@ -32,6 +32,7 @@ export const noDirs: ZipFilter = (_: string, stat: Stats) => {
 }
 
 export const compareFiles = (file: string) => {
+  console.log({ file, sampleZipPath, outputPath })
   const zipBuffer = readFileSync(join(sampleZipPath, file))
   const fileBuffer = readFileSync(join(outputPath, file))
   expect(bufferEqual(zipBuffer, fileBuffer)).toBe(true)
@@ -41,7 +42,7 @@ export const zipAndUnzip = async (options: Options) => {
   await zipWrite(sampleZipPath, options)
   return new Promise((resolve, reject) => {
     createReadStream(xpiPath)
-      .pipe(unzip.Extract({ path: outputPath }))
+      .pipe(unzip.Parse({ verbose: true, path: outputPath }))
       .on('close', resolve)
       .on('error', reject)
   })
