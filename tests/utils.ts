@@ -32,7 +32,6 @@ export const noDirs: ZipFilter = (_: string, stat: Stats) => {
 }
 
 export const compareFiles = (file: string) => {
-  console.log({ file, sourcePath, outputPath })
   const zipBuffer = readFileSync(join(sourcePath, file))
   const fileBuffer = readFileSync(join(outputPath, file))
   expect(bufferEqual(zipBuffer, fileBuffer)).toBe(true)

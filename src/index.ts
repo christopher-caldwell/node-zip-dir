@@ -16,14 +16,9 @@ export interface Options {
 export type FileQueue = QueueObject<Task>
 
 export const zipWrite = async (rootDir: string, options: Options = { maxOpenFiles: 500 }) => {
-  try {
-    const buffer = await zipBuffer(rootDir, options)
-    if (options.saveTo) writeFileSync(options.saveTo, buffer, { encoding: 'binary' })
-    return buffer
-  } catch (e) {
-    console.error('[zipWrite]: error', e)
-    throw e
-  }
+  const buffer = await zipBuffer(rootDir, options)
+  if (options.saveTo) writeFileSync(options.saveTo, buffer, { encoding: 'binary' })
+  return buffer
 }
 
 const zip = new Zip()

@@ -7,7 +7,7 @@ import { zipWrite } from '@/index'
 import {
   compareFiles,
   zipAndUnzip,
-  cleanUp,
+  // cleanUp,
   addEmpty,
   jsonOnly,
   noDirs,
@@ -16,13 +16,7 @@ import {
   outputPath
 } from './utils'
 
-beforeEach(async () => {
-  addEmpty()
-  await zipAndUnzip({ saveTo: zipPath })
-})
-afterEach(cleanUp)
-
-describe.skip('Creates a zip buffer', () => {
+describe('Creates a zip buffer', () => {
   test('Returns a usable zip buffer', () => {
     const getBuffer = async () => {
       const buffer = await zipWrite(sourcePath)
@@ -38,27 +32,28 @@ describe.skip('Creates a zip buffer', () => {
       const buffer = await zipWrite(path.join(sourcePath, path.sep))
       const zip = new Zip()
       await zip.loadAsync(buffer)
-      console.log('buffer', buffer)
     }
     expect(getBuffer()).resolves
   })
 
-  test("Throws an error when dirPath doesn't exist", () => {
-    const getInvalidBuffer = async () => {
-      await zipWrite(zipPath)
-    }
-    expect(getInvalidBuffer()).rejects
+  test("Throws an error when dirPath doesn't exist", async () => {
+    await expect(zipWrite(zipPath)).rejects.toThrowError()
   })
 
-  test('Throws an error when dirPath is a file', () => {
-    const getInvalidBuffer = async () => {
-      await zipWrite(path.join(sourcePath, 'file1.json'))
-    }
-    expect(getInvalidBuffer()).rejects
+  test('Throws an error when dirPath is a file', async () => {
+    await expect(zipWrite(path.join(sourcePath, 'file1.json'))).rejects.toThrowError()
   })
+
+  // test('', async () => {
+  //   expect(await ).toThrowError()
+  // })
 })
 
 describe('Writes a zip file', () => {
+  beforeEach(async () => {
+    addEmpty()
+    await zipAndUnzip({ saveTo: zipPath })
+  })
   test('Compresses and unpacks and all files match', () => {
     const files = ['file1.json', 'tiny.gif', 'dir/file2.json', 'dir/file3.json', 'dir/deep-dir/deeper-dir/file4.json']
     expect.assertions(files.length)
@@ -78,7 +73,7 @@ describe('Writes a zip file', () => {
     */
 })
 
-describe.skip('If a root path is specified', () => {
+describe('If a root path is specified', () => {
   const files = ['file1.json', 'tiny.gif', 'dir/file2.json', 'dir/file3.json', 'dir/deep-dir/deeper-dir/file4.json']
   test('stores input files and folders below the root path', async () => {
     expect.assertions(files.length)
@@ -87,7 +82,7 @@ describe.skip('If a root path is specified', () => {
   })
 })
 
-describe.skip('Uses `filter` to select items', () => {
+describe('Uses `filter` to select items', () => {
   test('filters out by file name, fs.Stat', async () => {
     await zipAndUnzip({ saveTo: zipPath, filter: jsonOnly })
     const files = ['file1.json', 'dir/file2.json', 'dir/file3.json', 'dir/deep-dir/deeper-dir/file4.json']
@@ -105,14 +100,20 @@ describe.skip('Uses `filter` to select items', () => {
   })
 })
 
-describe.skip('`each` option', function () {
+describe('Uses "each" option', function () {
   test('Calls "each" with each path added to zip', async () => {
     const paths: string[] = []
-    await zipWrite(sourcePath, { each: path => paths.push(path) })
+    await zipWrite(sourcePath, {
+      each: path => {
+        paths.push(path)
+      }
+    })
+
     const fileNames = [
       'file1.json',
       'tiny.gif',
       'dir/',
+      'empty-dir/',
       'dir/file2.json',
       'dir/file3.json',
       'dir/deep-dir',
@@ -142,6 +143,7 @@ describe.skip('`each` option', function () {
       'dir/file2.json',
       'dir/file3.json',
       'dir/',
+      'empty-dir/',
       'dir/deep-dir',
       'dir/deep-dir/deeper-dir',
       'dir/deep-dir/deeper-dir/file4.json'
