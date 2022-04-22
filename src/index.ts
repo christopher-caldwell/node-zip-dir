@@ -44,7 +44,7 @@ export interface Task {
   dir: string
   file: string
 }
-// var fileQueue =
+
 const generateFileQueue = (folders: Folders, options: Options) =>
   asyncLib.queue<Task>((task, callback) => {
     try {
