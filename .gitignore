@@ -1,15 +1,11 @@
-lib-cov
-*.seed
-*.log
-*.csv
-*.dat
-*.out
-*.pid
-*.gz
+# dependencies
+node_modules/
 
-pids
-logs
-results
+# Builds
+dist/
+coverage/
 
-npm-debug.log
-node_modules
+# misc
+.DS_Store
+.env.local
+.log*

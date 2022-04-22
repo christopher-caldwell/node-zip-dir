@@ -47,17 +47,13 @@ export interface Task {
 
 const generateFileQueue = (folders: Folders, options: Options) =>
   asyncLib.queue<Task>((task, callback) => {
-    try {
-      const data = readFileSync(task.fullPath)
+    const data = readFileSync(task.fullPath)
 
-      if (options.each) {
-        options.each(path.join(task.dir, task.file))
-      }
-      folders[task.dir].file(task.file, data)
-      callback(null)
-    } catch (e) {
-      callback(e as Error)
+    if (options.each) {
+      options.each(path.join(task.dir, task.file))
     }
+    folders[task.dir].file(task.file, data)
+    callback(null)
   }, options.maxOpenFiles)
 
 const addItem = async (fullPath: string, options: Options, folders: Folders, fileQueue: FileQueue) => {
@@ -71,8 +67,7 @@ const addItem = async (fullPath: string, options: Options, folders: Folders, fil
     if (options.each) {
       options.each(fullPath)
     }
-    const newZip = parentZip.folder(file)
-    if (newZip === null) throw new Error('[addItem]: Zip is null')
+    const newZip = parentZip.folder(file)!
     folders[fullPath] = newZip
     await dive(fullPath, options, folders, fileQueue)
   } else {
@@ -83,15 +78,8 @@ const addItem = async (fullPath: string, options: Options, folders: Folders, fil
 const dive = async (dir: string, options: Options, folders: Folders, fileQueue: FileQueue) => {
   const files = readdirSync(dir)
   if (!files.length) return
-  let count = files.length
   for (const file of files) {
     const fullPath = path.resolve(dir, file)
-    try {
-      await addItem(fullPath, options, folders, fileQueue)
-    } catch (addItemError) {
-      if (!--count) {
-        throw addItemError
-      }
-    }
+    await addItem(fullPath, options, folders, fileQueue)
   }
 }
