@@ -7,14 +7,14 @@ import bufferEqual from 'buffer-equal'
 import type { Options, ZipFilter } from '../src'
 import { zipWrite } from '../src'
 
-export const sampleZipPath = join(__dirname, 'assets')
-export const xpiPath = join(__dirname, 'test.zip')
-export const outputPath = join(__dirname, 'myxpi')
-export const emptyDirPath = join(sampleZipPath, 'emptyDir')
+export const sourcePath = join(__dirname, 'assets')
+export const zipPath = join(__dirname, 'test.zip')
+export const outputPath = join(__dirname, 'output')
+export const emptyDirPath = join(sourcePath, 'empty-dir')
 
 export const cleanUp = () => {
   removeSync(outputPath)
-  removeSync(xpiPath)
+  removeSync(zipPath)
   removeSync(emptyDirPath)
 }
 
@@ -32,17 +32,17 @@ export const noDirs: ZipFilter = (_: string, stat: Stats) => {
 }
 
 export const compareFiles = (file: string) => {
-  console.log({ file, sampleZipPath, outputPath })
-  const zipBuffer = readFileSync(join(sampleZipPath, file))
+  console.log({ file, sourcePath, outputPath })
+  const zipBuffer = readFileSync(join(sourcePath, file))
   const fileBuffer = readFileSync(join(outputPath, file))
   expect(bufferEqual(zipBuffer, fileBuffer)).toBe(true)
 }
 
 export const zipAndUnzip = async (options: Options) => {
-  await zipWrite(sampleZipPath, options)
+  await zipWrite(sourcePath, options)
   return new Promise((resolve, reject) => {
-    createReadStream(xpiPath)
-      .pipe(unzip.Parse({ verbose: true, path: outputPath }))
+    createReadStream(zipPath)
+      .pipe(unzip.Extract({ path: outputPath }))
       .on('close', resolve)
       .on('error', reject)
   })

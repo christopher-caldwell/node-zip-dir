@@ -36,7 +36,7 @@ export const zipBuffer = async (rootDir: string, options: Options) => {
 
   folders[rootDir] = zip
 
-  dive(rootDir, options, folders, fileQueue)
+  await dive(rootDir, options, folders, fileQueue)
   const buffer = await zip.generateAsync({
     compression: 'DEFLATE',
     type: 'nodebuffer'
@@ -59,6 +59,7 @@ const generateFileQueue = (folders: Folders, options: Options) =>
         options.each(path.join(task.dir, task.file))
       }
       folders[task.dir].file(task.file, data)
+      callback(null)
     } catch (e) {
       callback(e as Error)
     }
@@ -67,9 +68,9 @@ const generateFileQueue = (folders: Folders, options: Options) =>
 const addItem = async (fullPath: string, options: Options, folders: Folders, fileQueue: FileQueue) => {
   const stat = statSync(fullPath)
   if (options.filter && !options.filter(fullPath, stat)) return
-  var dir = path.dirname(fullPath)
-  var file = path.basename(fullPath)
-  var parentZip
+  const dir = path.dirname(fullPath)
+  const file = path.basename(fullPath)
+  let parentZip
   if (stat.isDirectory()) {
     parentZip = folders[dir]
     if (options.each) {
@@ -80,28 +81,22 @@ const addItem = async (fullPath: string, options: Options, folders: Folders, fil
     folders[fullPath] = newZip
     await dive(fullPath, options, folders, fileQueue)
   } else {
-    fileQueue.push({ fullPath: fullPath, dir: dir, file: file })
+    await fileQueue.push({ fullPath, dir, file })
   }
 }
 
-const dive = (dir: string, options: Options, folders: Folders, fileQueue: FileQueue) => {
-  return new Promise((resolve, reject) => {
+const dive = async (dir: string, options: Options, folders: Folders, fileQueue: FileQueue) => {
+  const files = readdirSync(dir)
+  if (!files.length) return
+  let count = files.length
+  for (const file of files) {
+    const fullPath = path.resolve(dir, file)
     try {
-      const files = readdirSync(dir)
-      if (!files.length) resolve(null)
-      let count = files.length
-      files.forEach(file => {
-        const fullPath = path.resolve(dir, file)
-        try {
-          addItem(fullPath, options, folders, fileQueue)
-        } catch (addItemError) {
-          if (!--count) {
-            reject(addItemError)
-          }
-        }
-      })
-    } catch (e) {
-      reject(e)
+      await addItem(fullPath, options, folders, fileQueue)
+    } catch (addItemError) {
+      if (!--count) {
+        throw addItemError
+      }
     }
-  })
+  }
 }
